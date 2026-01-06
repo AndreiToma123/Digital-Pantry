@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import { calculateDaysLeft } from './utils';  
 
 function App() {
   const [items, setItems] = useState([]);
@@ -12,17 +13,6 @@ function App() {
       setItems(JSON.parse(savedItems));
     }
   }, []);
-
-
-
-  function calculateDaysLeft(expiryDate) {
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const timeDifference = expiry - today;
-    const daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
-    return daysDifference;
-  }
-
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -49,16 +39,16 @@ function App() {
     return new Date(a.expiryDate) - new Date(b.expiryDate);
   });
 
-   const filteredItems = sortedItems.filter(item => 
+  const filteredItems = sortedItems.filter(item =>
     item.myItem.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
     <main className="container">
       <h1>Digital Pantry</h1>
-       <label>
-          Search: <input type="text" onChange={e => setQuery(e.target.value)} />
-        </label>
+      <label>
+        Search: <input type="text" onChange={e => setQuery(e.target.value)} />
+      </label>
       <form method="post" onSubmit={handleSubmit}>
         <label>
           Item <input name="myItem" />
