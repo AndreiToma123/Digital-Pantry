@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { calculateDaysLeft } from './utils';  
+import { calculateDaysLeft, fetchProductByBarcode } from './utils';
 
 function App() {
   const [items, setItems] = useState([]);
   const [query, setQuery] = useState("");
-
+  const [barcode, setBarcode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const savedItems = localStorage.getItem("pantryItems");
@@ -14,15 +16,39 @@ function App() {
     }
   }, []);
 
+  async function handleBarcodeSubmit(e) {
+    e.preventDefault();
+
+    if (!barcode) {
+      setError("Please enter a barcode");
+      return;
+    }
+
+
+    setLoading(true);
+    setError("");
+
+    const productData = await fetchProductByBarcode(barcode);
+
+    if (productData.success) {
+      document.querySelector('input[name="myItem"]').value = productData.productName;
+      setBarcode("");
+    } else {
+      setError(productData.message);
+    }
+
+    setLoading(false);
+  }
+
+
   function handleSubmit(e) {
     e.preventDefault();
 
     const form = e.target;
     const formData = new FormData(form);
-
     const formJson = Object.fromEntries(formData.entries());
-
     const updatedItems = ([...items, formJson]);
+
     setItems(updatedItems);
     localStorage.setItem("pantryItems", JSON.stringify(updatedItems));
     form.reset();
@@ -49,6 +75,22 @@ function App() {
       <label>
         Search: <input type="text" onChange={e => setQuery(e.target.value)} />
       </label>
+      <form onSubmit={handleBarcodeSubmit}>
+        <h3>Scan Barcode</h3>
+        <label>
+          Barcode:
+          <input
+          type="text"
+          value={barcode}
+          onChange={e => setBarcode(e.target.value)}
+          placeholder="Enter barcode number"
+          />
+        </label>
+        <button type="submit" disabled={loading}>
+          {loading ? "Searching..." : "Look Up Product"}
+        </button>
+        {error && <p style={{color: 'red'}}>{error}</p>}
+      </form>
       <form method="post" onSubmit={handleSubmit}>
         <label>
           Item <input name="myItem" />
