@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { calculateDaysLeft, fetchProductByBarcode } from './utils';
+import { Scanner} from './Scanner';
 
 function App() {
   const [items, setItems] = useState([]);
@@ -77,6 +78,7 @@ function App() {
       </label>
       <form onSubmit={handleBarcodeSubmit}>
         <h3>Scan Barcode</h3>
+        <Scanner/>
         <label>
           Barcode:
           <input
