@@ -1,20 +1,24 @@
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 function Scanner() {
 
     const [scanResult, setScanResult] = useState(null);
+    const scannerRef = useRef(null);
 
     useEffect(() => {
+        // Prevent double initialization
+        if (scannerRef.current) return;
+
         const scanner = new Html5QrcodeScanner('reader', {
             qrbox: {
                 width: 250,
                 height: 250,
             },
-            fps: 5, //if too fast it can lag
+            fps: 5,
         });
 
-        scanner.render(success, error);
+        scannerRef.current = scanner;
 
         function success(result) {
             scanner.clear();
@@ -22,8 +26,20 @@ function Scanner() {
         }
 
         function error(err) {
-            console.log(err);
+            console.warn(err);
         }
+
+        scanner.render(success, error);
+
+        // Cleanup function
+        return () => {
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(err => {
+                    console.error("Failed to clear scanner:", err);
+                });
+                scannerRef.current = null;
+            }
+        };
 
     }, []);
 
@@ -31,14 +47,12 @@ function Scanner() {
         <div className="Scanner">
             
             { scanResult
-            ? <div>Success: scanResult</div>
+            ? <div>Success: {scanResult}</div>
             : <div id="reader"></div>
             }
         </div>
     );
 
 }
-
-
 
 export default Scanner;

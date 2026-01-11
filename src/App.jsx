@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { calculateDaysLeft, fetchProductByBarcode } from './utils';
-import { Scanner} from './Scanner';
+import Scanner from './Scanner';
 
 function App() {
   const [items, setItems] = useState([]);
