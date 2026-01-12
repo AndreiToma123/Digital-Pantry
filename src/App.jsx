@@ -73,12 +73,8 @@ function App() {
   return (
     <main className="container">
       <h1>Digital Pantry</h1>
-      <label>
-        Search: <input type="text" onChange={e => setQuery(e.target.value)} />
-      </label>
-      <form onSubmit={handleBarcodeSubmit}>
-        <h3>Scan Barcode</h3>
-        <Scanner/>
+      <h3>Scan Barcode</h3>
+      <Scanner/>
         <label>
           Barcode:
           <input
@@ -88,6 +84,10 @@ function App() {
           placeholder="Enter barcode number"
           />
         </label>
+      <label>
+        Search: <input type="text" onChange={e => setQuery(e.target.value)} />
+      </label>
+      <form onSubmit={handleBarcodeSubmit}>
         <button type="submit" disabled={loading}>
           {loading ? "Searching..." : "Look Up Product"}
         </button>
