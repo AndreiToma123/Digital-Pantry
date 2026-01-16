@@ -1,142 +1,111 @@
+
 import { useEffect, useState } from 'react'
-import { calculateDaysLeft, fetchProductByBarcode } from './utils'
-import Scanner from './Scanner'
-import './App.css'
+import Header from './components/Header'
+import Stats from './components/Stats'
+import AddItem from './components/AddItem'
+import PantryList from './components/PantryList'
 
 function App() {
   const [items, setItems] = useState([]);
-  const [query, setQuery] = useState("");
-  const [barcode, setBarcode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showScanner, setShowScanner] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     const savedItems = localStorage.getItem("pantryItems");
     if (savedItems) {
-      setItems(JSON.parse(savedItems));
+      try {
+        setItems(JSON.parse(savedItems));
+      } catch (e) {
+        console.error("Failed to parse items", e);
+      }
     }
   }, []);
 
-async function lookupBarcode(barcodeValue) {
-  setLoading(true);
-  setError("");
-
-  const productData = await fetchProductByBarcode(barcodeValue);
-
-  if (productData.success) {
-    document.querySelector('input[name="myItem"]').value = productData.productName;
-    setBarcode("");
-    setShowScanner(false); 
-    setError(""); 
-  } else {
-    setError(productData.message);
-    setBarcode(barcodeValue);
-    setShowScanner(false); 
+  const saveItems = (newItems) => {
+    setItems(newItems);
+    localStorage.setItem("pantryItems", JSON.stringify(newItems));
   }
 
-  setLoading(false);
-}
-
-  async function handleBarcodeSubmit(e) {
-    e.preventDefault();
-    
-    if (!barcode) {
-      setError("Please enter a barcode");
-      return;
-    }
-
-    await lookupBarcode(barcode);
+  const handleAdd = (newItem) => {
+    const itemWithId = { ...newItem, id: Date.now().toString() };
+    const updatedItems = [...items, itemWithId];
+    saveItems(updatedItems);
+    setIsAddModalOpen(false);
   }
 
-  function handleScanSuccess(scannedBarcode) {
-    lookupBarcode(scannedBarcode);
+  const handleDelete = (indexToDelete) => {
+    const updatedItems = items.filter((_, index) => index !== indexToDelete);
+    saveItems(updatedItems);
   }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-
-    const form = e.target;
-    const formData = new FormData(form);
-
-    const formJson = Object.fromEntries(formData.entries());
-
-    const updatedItems = ([...items, formJson]);
-    setItems(updatedItems);
-    localStorage.setItem("pantryItems", JSON.stringify(updatedItems));
-    form.reset();
-  }
-
-  function handleDelete(indexToDelete) {
-    const updatedItems = items.filter((item, index) => index !== indexToDelete);
-    setItems(updatedItems);
-    localStorage.setItem("pantryItems", JSON.stringify(updatedItems));
-  }
-
-  const sortedItems = [...items].sort((a, b) => {
-    return new Date(a.expiryDate) - new Date(b.expiryDate);
-  });
-
-  const filteredItems = sortedItems.filter(item => 
-    item.myItem.toLowerCase().includes(query.toLowerCase())
-  );
 
   return (
-    <main className="container">
-      <h1>Digital Pantry</h1>
-      
-      <label>
-        Search: <input type="text" onChange={e => setQuery(e.target.value)} />
-      </label>
+    <main className="container" style={{ paddingBottom: '6rem' }}>
+      <Header />
+      <Stats items={items} />
 
-      <div>
-        <h3>Add by Barcode</h3>
-        <button onClick={() => setShowScanner(!showScanner)}>
-          {showScanner ? "Hide Scanner" : "Show Scanner"}
-        </button>
-        
-        {showScanner && <Scanner onScanSuccess={handleScanSuccess} />}
-        
-        <form onSubmit={handleBarcodeSubmit}>
-          <label>
-            Or enter barcode manually: 
-            <input 
-              type="text" 
-              value={barcode}
-              onChange={e => setBarcode(e.target.value)}
-              placeholder="Enter barcode number"
-            />
-          </label>
-          <button type="submit" disabled={loading}>
-            {loading ? "Searching..." : "Look Up Product"}
-          </button>
-        </form>
-        {error && <p style={{color: 'red'}}>{error}</p>}
+      <div className="flex flex-col gap-4">
+       
+        <PantryList items={items} onDelete={handleDelete} />
       </div>
 
-      <form method="post" onSubmit={handleSubmit}>
-        <h3>Add Item</h3>
-        <label>
-          Item <input name="myItem" />
-        </label>
-        <label>
-          Expiry date <input name="expiryDate" type="date" />
-        </label>
-        <button type="submit">Submit</button>
-      </form>
+      <button
+        onClick={() => setIsAddModalOpen(true)}
+        style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          width: '3.5rem',
+          height: '3.5rem',
+          borderRadius: '50%',
+          fontSize: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+          zIndex: 50
+        }}
+        className="animate-fade-in"
+      >
+        +
+      </button>
 
-      <h2>Pantry Items</h2>
-      <ul>
-        {filteredItems.map((item, index) => {
-          const daysLeft = calculateDaysLeft(item.expiryDate);
-          return (
-            <li key={index}>
-              {item.myItem}: {item.expiryDate} ({daysLeft} days left)
-              <button onClick={() => handleDelete(index)}>Delete</button>
-            </li>
-          );
-        })}
-      </ul>
+      {isAddModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: '1rem'
+        }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
+          }}
+          className="animate-fade-in"
+        >
+          <div style={{ width: '100%', maxWidth: '500px' }}>
+            <div className="flex justify-between items-center" style={{ marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0 }}>Add New Item</h2>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                style={{ background: 'transparent', padding: '0.5rem', fontSize: '1.5rem', lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+            <AddItem onAdd={handleAdd} />
+          </div>
+        </div>
+      )}
+
+      <footer className="text-center" style={{ marginTop: '4rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+        <p>&copy; {new Date().getFullYear()} Digital Pantry</p>
+      </footer>
     </main>
   );
 }
