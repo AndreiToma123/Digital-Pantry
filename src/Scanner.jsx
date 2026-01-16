@@ -1,13 +1,12 @@
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
-function Scanner() {
+function Scanner({ onScanSuccess }) {
 
-    const [scanResult, setScanResult] = useState(null);
     const scannerRef = useRef(null);
+    const hasScanned = useRef(false);
 
     useEffect(() => {
-        // Prevent double initialization
         if (scannerRef.current) return;
 
         const scanner = new Html5QrcodeScanner('reader', {
@@ -21,8 +20,15 @@ function Scanner() {
         scannerRef.current = scanner;
 
         function success(result) {
+            if (hasScanned.current) return;
+            hasScanned.current = true;
+            
             scanner.clear();
-            setScanResult(result);
+            scannerRef.current = null;
+            
+            if (onScanSuccess) {
+                onScanSuccess(result);
+            }
         }
 
         function error(err) {
@@ -31,7 +37,6 @@ function Scanner() {
 
         scanner.render(success, error);
 
-        // Cleanup function
         return () => {
             if (scannerRef.current) {
                 scannerRef.current.clear().catch(err => {
@@ -39,17 +44,14 @@ function Scanner() {
                 });
                 scannerRef.current = null;
             }
+            hasScanned.current = false;
         };
 
-    }, []);
+    }, [onScanSuccess]);
 
     return (
         <div className="Scanner">
-            
-            { scanResult
-            ? <div>Success: {scanResult}</div>
-            : <div id="reader"></div>
-            }
+            <div id="reader"></div>
         </div>
     );
 

@@ -12,6 +12,14 @@ export async function fetchProductByBarcode(barcode) {
     const response = await fetch(
       `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`
     );
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        message: `Product with barcode ${barcode} not found in Open Food Facts database. You can add it manually.`
+      };
+    }
+    
     const data = await response.json();
     
     if (data.status === 1) {
@@ -25,13 +33,13 @@ export async function fetchProductByBarcode(barcode) {
     } else {
       return {
         success: false,
-        message: "Product not found in database"
+        message: `Product with barcode ${barcode} not found. You can add it manually.`
       };
     }
   } catch (error) {
     return {
       success: false,
-      message: "Error fetching product data"
+      message: "Error connecting to Open Food Facts. Please check your internet connection or add the item manually."
     };
   }
 }
